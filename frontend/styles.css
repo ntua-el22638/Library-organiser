@@ -141,11 +141,60 @@ h1 {
   gap: 0.9rem;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .book-form label,
 .search-bar label {
   display: grid;
   gap: 0.35rem;
   font-size: 0.95rem;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.category-option {
+  display: inline-flex !important;
+  align-items: center;
+  cursor: pointer;
+}
+
+.category-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.category-option span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(89, 66, 45, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.category-option input:checked + span {
+  border-color: rgba(170, 95, 44, 0.6);
+  background: linear-gradient(135deg, rgba(170, 95, 44, 0.18), rgba(125, 67, 25, 0.22));
+  color: var(--accent-dark);
+}
+
+.category-option:hover span {
+  transform: translateY(-1px);
 }
 
 input,
@@ -188,9 +237,25 @@ button:disabled {
   color: var(--ink);
 }
 
+.form-actions,
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .search-bar {
   grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.7fr) auto auto;
   align-items: center;
+}
+
+.bulk-actions {
+  margin-top: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  background: rgba(255, 248, 236, 0.78);
 }
 
 .books-list {
@@ -204,6 +269,13 @@ button:disabled {
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.book-card.selected {
+  border-color: rgba(170, 95, 44, 0.55);
+  box-shadow: 0 12px 24px rgba(125, 67, 25, 0.12);
+  transform: translateY(-1px);
 }
 
 .book-card-header,
@@ -213,6 +285,20 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.select-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.select-book input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
 }
 
 .book-title {

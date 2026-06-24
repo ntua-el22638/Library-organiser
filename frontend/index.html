@@ -13,8 +13,8 @@
           <p class="eyebrow">Personal Library Dashboard</p>
           <h1>Library Organiser</h1>
           <p class="hero-copy">
-            Κατέγραψε τα βιβλία σου, δες τι βρίσκεται στο ράφι και τι έχει
-            παρθεί, και βρες γρήγορα τη σωστή θέση.
+            Κατέγραψε τα βιβλία σου, δες τι βρίσκεται στο ράφι και τι έχει δανειστεί, και βρες γρήγορα τη σωστή
+            θέση.
           </p>
         </div>
         <div class="hero-stats">
@@ -28,7 +28,7 @@
           </article>
           <article>
             <span id="borrowed-count">0</span>
-            <p>Παρμένα</p>
+            <p>Δανεισμένα</p>
           </article>
         </div>
       </header>
@@ -36,8 +36,8 @@
       <main class="dashboard">
         <section class="panel">
           <div class="panel-heading">
-            <h2>Προσθήκη βιβλίου</h2>
-            <p>Δημιούργησε νέα εγγραφή στη βάση.</p>
+            <h2 id="form-title">Προσθήκη βιβλίου</h2>
+            <p id="form-description">Δημιούργησε νέα εγγραφή στη βάση.</p>
           </div>
           <form id="book-form" class="book-form">
             <label>
@@ -50,7 +50,89 @@
             </label>
             <label>
               Κατηγορία
-              <input name="category" type="text" />
+              <span class="field-hint">Επίλεξε όσες κατηγορίες θέλεις με απλό click.</span>
+              <div class="category-picker">
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Λογοτεχνία" />
+                  <span>Λογοτεχνία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ελληνική Λογοτεχνία" />
+                  <span>Ελληνική Λογοτεχνία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ξένη Λογοτεχνία" />
+                  <span>Ξένη Λογοτεχνία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Επιστημονική Φαντασία" />
+                  <span>Επιστημονική Φαντασία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Φαντασίας" />
+                  <span>Φαντασίας</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Μυστηρίου" />
+                  <span>Μυστηρίου</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Θρίλερ" />
+                  <span>Θρίλερ</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ιστορικά" />
+                  <span>Ιστορικά</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Βιογραφίες" />
+                  <span>Βιογραφίες</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ιστορία" />
+                  <span>Ιστορία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Φιλοσοφία" />
+                  <span>Φιλοσοφία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ψυχολογία" />
+                  <span>Ψυχολογία</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Αυτοβελτίωση" />
+                  <span>Αυτοβελτίωση</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Επιστήμη" />
+                  <span>Επιστήμη</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Τεχνολογία / Πληροφορική" />
+                  <span>Τεχνολογία / Πληροφορική</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Οικονομία / Business" />
+                  <span>Οικονομία / Business</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Πολιτική / Κοινωνικές Επιστήμες" />
+                  <span>Πολιτική / Κοινωνικές Επιστήμες</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Τέχνες / Πολιτισμός" />
+                  <span>Τέχνες / Πολιτισμός</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Ποίηση" />
+                  <span>Ποίηση</span>
+                </label>
+                <label class="category-option">
+                  <input type="checkbox" name="category" value="Παιδικά / Εφηβικά" />
+                  <span>Παιδικά / Εφηβικά</span>
+                </label>
+              </div>
             </label>
             <label>
               Θέση
@@ -60,10 +142,13 @@
               Κατάσταση
               <select name="availability">
                 <option value="available">Στη βιβλιοθήκη</option>
-                <option value="borrowed">Παρμένο</option>
+                <option value="borrowed">Δανεισμένο</option>
               </select>
             </label>
-            <button type="submit">Αποθήκευση</button>
+            <div class="form-actions">
+              <button id="submit-button" type="submit">Αποθήκευση</button>
+              <button id="cancel-edit-button" type="button" class="ghost-button hidden">Ακύρωση</button>
+            </div>
           </form>
           <p id="form-message" class="status-message"></p>
         </section>
@@ -71,7 +156,7 @@
         <section class="panel panel-wide">
           <div class="panel-heading">
             <h2>Αναζήτηση και βιβλιοθήκη</h2>
-            <p>Αναζήτηση στη βάση και έλεγχος διαθεσιμότητας.</p>
+            <p>Αναζήτησε στη βάση και διαχειρίσου γρήγορα τις εγγραφές σου.</p>
           </div>
 
           <form id="search-form" class="search-bar">
@@ -84,13 +169,18 @@
             <select id="availability-filter" name="availability">
               <option value="">Όλες οι καταστάσεις</option>
               <option value="available">Μόνο στη βιβλιοθήκη</option>
-              <option value="borrowed">Μόνο παρμένα</option>
+              <option value="borrowed">Μόνο δανεισμένα</option>
             </select>
             <button type="submit">Search</button>
             <button type="button" id="reset-button" class="ghost-button">Reset</button>
           </form>
 
           <p id="list-message" class="status-message"></p>
+          <div id="bulk-actions" class="bulk-actions hidden">
+            <span id="selection-count">0 selected</span>
+            <button type="button" id="delete-selected-button" class="ghost-button">Delete selected</button>
+            <button type="button" id="clear-selection-button" class="ghost-button">Clear selection</button>
+          </div>
           <div id="books-list" class="books-list"></div>
         </section>
       </main>

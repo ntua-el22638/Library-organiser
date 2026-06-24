@@ -126,6 +126,37 @@ def test_change_location(tmp_path: Path) -> None:
     assert response.json()["location"] == "Shelf D-5"
 
 
+def test_update_book_details(tmp_path: Path) -> None:
+    client = create_client(tmp_path)
+    created = client.post(
+        "/books",
+        json={
+            "title": "The Left Hand of Darkness",
+            "author": "Ursula K. Le Guin",
+            "category": "Sci-Fi",
+            "location": "Shelf F-1",
+            "availability": "available",
+        },
+    ).json()
+
+    response = client.put(
+        f"/books/{created['id']}",
+        json={
+            "title": "The Dispossessed",
+            "author": "Ursula K. Le Guin",
+            "category": "Science Fiction",
+            "location": "Shelf F-4",
+            "availability": "available",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "The Dispossessed"
+    assert data["category"] == "Science Fiction"
+    assert data["location"] == "Shelf F-4"
+
+
 def test_delete_book_removes_it_from_results(tmp_path: Path) -> None:
     client = create_client(tmp_path)
     created = client.post(
