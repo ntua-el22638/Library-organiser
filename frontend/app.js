@@ -19,6 +19,12 @@ const availabilityFilter = document.getElementById("availability-filter");
 const booksList = document.getElementById("books-list");
 const libraryVisualization = document.getElementById("library-visualization");
 const visualizationMessage = document.getElementById("visualization-message");
+const bookModal = document.getElementById("book-modal");
+const closeBookModalButton = document.getElementById("close-book-modal");
+const bookModalTitle = document.getElementById("book-modal-title");
+const bookModalAuthor = document.getElementById("book-modal-author");
+const bookModalCategory = document.getElementById("book-modal-category");
+const bookModalStatus = document.getElementById("book-modal-status");
 const bulkActions = document.getElementById("bulk-actions");
 const selectionCount = document.getElementById("selection-count");
 const deleteSelectedButton = document.getElementById("delete-selected-button");
@@ -32,6 +38,7 @@ const borrowedCount = document.getElementById("borrowed-count");
 let books = [];
 let editingBookId = null;
 let selectedBookIds = new Set();
+let activePreviewBookId = null;
 
 function setMessage(element, message = "", isError = false) {
   element.textContent = message;
@@ -141,6 +148,25 @@ function hashString(value) {
   return Array.from(String(value)).reduce((total, char) => total + char.charCodeAt(0), 0);
 }
 
+function openBookModal(book) {
+  activePreviewBookId = book.id;
+  bookModalTitle.textContent = book.title;
+  bookModalAuthor.textContent = book.author;
+  bookModalCategory.textContent = book.category || "Uncategorised";
+  bookModalStatus.textContent = formatAvailability(book.availability);
+  bookModalStatus.className = `book-cover-badge ${book.availability}`;
+  bookModal.classList.remove("hidden");
+  bookModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeBookModal() {
+  activePreviewBookId = null;
+  bookModal.classList.add("hidden");
+  bookModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
 function buildSpineMarkup(book, index, countInCell) {
   const hash = hashString(`${book.title}-${book.author}-${book.id}`);
   const color = BOOK_COLORS[hash % BOOK_COLORS.length];
@@ -153,6 +179,7 @@ function buildSpineMarkup(book, index, countInCell) {
     <div
       class="book-spine ${book.availability === "borrowed" ? "borrowed" : ""}"
       title="${escapeHtml(`${book.title} — ${book.author}`)}"
+      data-preview-id="${book.id}"
       style="--book-height:${height}px;--book-lean:${lean}deg;--book-hover:${hoverOffset}px;--book-width:${width}px;--book-color:${color};--book-delay:${index * 35}ms;"
     >
       <span>${escapeHtml(book.title.slice(0, 1).toUpperCase())}</span>
@@ -194,6 +221,9 @@ function renderLibraryVisualization(items) {
 function renderBooks(items) {
   books = items;
   selectedBookIds = new Set([...selectedBookIds].filter((id) => items.some((item) => item.id === id)));
+  if (activePreviewBookId !== null && !items.some((item) => item.id === activePreviewBookId)) {
+    closeBookModal();
+  }
   updateStats(items);
   updateBulkActions();
   renderLibraryVisualization(items);
@@ -212,7 +242,7 @@ function renderBooks(items) {
       const isSelected = selectedBookIds.has(book.id);
 
       return `
-        <article class="book-card ${isSelected ? "selected" : ""}">
+        <article class="book-card ${isSelected ? "selected" : ""}" data-preview-id="${book.id}">
           <div class="book-card-header">
             <label class="select-book">
               <input type="checkbox" data-action="select" data-id="${book.id}" ${isSelected ? "checked" : ""} />
@@ -250,6 +280,25 @@ function renderBooks(items) {
       `;
     })
     .join("");
+}
+
+function handlePreviewClick(target) {
+  const previewTrigger = target.closest("[data-preview-id]");
+  if (!previewTrigger) {
+    return false;
+  }
+
+  if (target.closest("button[data-action]") || target.closest('input[type="checkbox"]')) {
+    return false;
+  }
+
+  const book = books.find((item) => item.id === Number(previewTrigger.dataset.previewId));
+  if (!book) {
+    return false;
+  }
+
+  openBookModal(book);
+  return true;
 }
 
 async function loadBooks() {
@@ -360,6 +409,10 @@ function promptForShelfPosition(book) {
 
 async function handleBookAction(event) {
   const target = event.target;
+  if (handlePreviewClick(target)) {
+    return;
+  }
+
   const checkbox = target.closest('input[type="checkbox"][data-action="select"]');
   if (checkbox) {
     toggleSelection(Number(checkbox.dataset.id), checkbox.checked);
@@ -462,6 +515,20 @@ clearSelectionButton.addEventListener("click", () => {
 });
 booksList.addEventListener("click", handleBookAction);
 booksList.addEventListener("change", handleBookAction);
+libraryVisualization.addEventListener("click", (event) => {
+  handlePreviewClick(event.target);
+});
+closeBookModalButton.addEventListener("click", closeBookModal);
+bookModal.addEventListener("click", (event) => {
+  if (event.target.closest('[data-action="close-modal"]')) {
+    closeBookModal();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !bookModal.classList.contains("hidden")) {
+    closeBookModal();
+  }
+});
 
 setCreateMode();
 loadBooks();

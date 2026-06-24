@@ -136,6 +136,26 @@
       </main>
     </div>
 
+    <div id="book-modal" class="book-modal hidden" aria-hidden="true">
+      <div class="book-modal-backdrop" data-action="close-modal"></div>
+      <div class="book-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="book-modal-title">
+        <button type="button" id="close-book-modal" class="book-modal-close ghost-button" aria-label="Close preview">
+          Close
+        </button>
+        <div class="book-preview">
+          <article class="book-cover">
+            <p class="book-cover-kicker">Library Organiser</p>
+            <h2 id="book-modal-title" class="book-cover-title"></h2>
+            <p id="book-modal-author" class="book-cover-author"></p>
+            <div id="book-modal-category" class="book-cover-category"></div>
+            <div class="book-cover-footer">
+              <span id="book-modal-status" class="book-cover-badge"></span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>
