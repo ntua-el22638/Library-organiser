@@ -97,10 +97,10 @@ def create_app(db_path: str | None = None) -> FastAPI:
         existing = database.get_book(book_id)
         if existing is None:
             raise HTTPException(status_code=404, detail="Book not found.")
-        if not existing["location"]:
+        if not existing["shelf_column"] or not existing["shelf_row"]:
             raise HTTPException(
                 status_code=400,
-                detail="Cannot return a book without a location.",
+                detail="Cannot return a book without a shelf position.",
             )
         row = database.update_availability(book_id, Availability.AVAILABLE)
         return build_book_response(row)
@@ -110,7 +110,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         existing = database.get_book(book_id)
         if existing is None:
             raise HTTPException(status_code=404, detail="Book not found.")
-        row = database.update_location(book_id, payload.location)
+        row = database.update_location(book_id, payload.shelf_column, payload.shelf_row)
         return build_book_response(row)
 
     @app.delete("/books/{book_id}", status_code=204)

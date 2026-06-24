@@ -1,7 +1,13 @@
 const API_BASE_URL = "http://127.0.0.1:8000";
+const MAX_SHELF_COLUMNS = 4;
+const MAX_SHELF_ROWS = 6;
+const CATEGORY_SEPARATOR = ", ";
+const BOOK_COLORS = ["#d7c6a4", "#b17b55", "#7f5539", "#a1a8b8", "#6d597a", "#588157", "#bc6c25"];
 
 const bookForm = document.getElementById("book-form");
 const categoryInputs = document.querySelectorAll('input[name="category"]');
+const shelfColumnInput = document.getElementById("shelf-column");
+const shelfRowInput = document.getElementById("shelf-row");
 const formTitle = document.getElementById("form-title");
 const formDescription = document.getElementById("form-description");
 const submitButton = document.getElementById("submit-button");
@@ -11,6 +17,8 @@ const resetButton = document.getElementById("reset-button");
 const searchInput = document.getElementById("search-input");
 const availabilityFilter = document.getElementById("availability-filter");
 const booksList = document.getElementById("books-list");
+const libraryVisualization = document.getElementById("library-visualization");
+const visualizationMessage = document.getElementById("visualization-message");
 const bulkActions = document.getElementById("bulk-actions");
 const selectionCount = document.getElementById("selection-count");
 const deleteSelectedButton = document.getElementById("delete-selected-button");
@@ -24,7 +32,6 @@ const borrowedCount = document.getElementById("borrowed-count");
 let books = [];
 let editingBookId = null;
 let selectedBookIds = new Set();
-const CATEGORY_SEPARATOR = ", ";
 
 function setMessage(element, message = "", isError = false) {
   element.textContent = message;
@@ -59,6 +66,10 @@ function formatAvailability(value) {
   return value === "available" ? "Available in library" : "Borrowed";
 }
 
+function formatShelfPosition(book) {
+  return `Column ${book.shelf_column} · Row ${book.shelf_row}`;
+}
+
 function updateStats(items) {
   totalCount.textContent = items.length;
   availableCount.textContent = items.filter((item) => item.availability === "available").length;
@@ -84,13 +95,15 @@ function resetFormState() {
   editingBookId = null;
   bookForm.reset();
   bookForm.elements.availability.value = "available";
+  shelfColumnInput.value = 1;
+  shelfRowInput.value = 1;
   cancelEditButton.classList.add("hidden");
 }
 
 function setCreateMode() {
   resetFormState();
   formTitle.textContent = "Add book";
-  formDescription.textContent = "Create a new record in your library.";
+  formDescription.textContent = "Create a new record and place it on the shelf map.";
   submitButton.textContent = "Save book";
   setMessage(formMessage, "");
 }
@@ -113,14 +126,69 @@ function setEditMode(book) {
   bookForm.elements.title.value = book.title;
   bookForm.elements.author.value = book.author;
   setSelectedCategories(book.category || "");
-  bookForm.elements.location.value = book.location || "";
+  shelfColumnInput.value = book.shelf_column;
+  shelfRowInput.value = book.shelf_row;
   bookForm.elements.availability.value = book.availability;
   formTitle.textContent = "Edit book";
-  formDescription.textContent = `Editing "${book.title}".`;
+  formDescription.textContent = `Editing "${book.title}" on ${formatShelfPosition(book)}.`;
   submitButton.textContent = "Update book";
   cancelEditButton.classList.remove("hidden");
   setMessage(formMessage, `Editing "${book.title}".`);
   bookForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function hashString(value) {
+  return Array.from(String(value)).reduce((total, char) => total + char.charCodeAt(0), 0);
+}
+
+function buildSpineMarkup(book, index, countInCell) {
+  const hash = hashString(`${book.title}-${book.author}-${book.id}`);
+  const color = BOOK_COLORS[hash % BOOK_COLORS.length];
+  const height = 64 + (hash % 42);
+  const lean = ((hash % 9) - 4) * 0.8;
+  const hoverOffset = 4 + (index % 4);
+  const width = Math.max(10, 17 - Math.floor(countInCell / 4));
+
+  return `
+    <div
+      class="book-spine ${book.availability === "borrowed" ? "borrowed" : ""}"
+      title="${escapeHtml(`${book.title} — ${book.author}`)}"
+      style="--book-height:${height}px;--book-lean:${lean}deg;--book-hover:${hoverOffset}px;--book-width:${width}px;--book-color:${color};--book-delay:${index * 35}ms;"
+    >
+      <span>${escapeHtml(book.title.slice(0, 1).toUpperCase())}</span>
+    </div>
+  `;
+}
+
+function renderLibraryVisualization(items) {
+  const cells = [];
+
+  for (let row = 1; row <= MAX_SHELF_ROWS; row += 1) {
+    for (let column = 1; column <= MAX_SHELF_COLUMNS; column += 1) {
+      const cellBooks = items.filter((book) => book.shelf_column === column && book.shelf_row === row);
+      const spines = cellBooks
+        .map((book, index) => buildSpineMarkup(book, index, cellBooks.length))
+        .join("");
+
+      cells.push(`
+        <section class="shelf-cell ${cellBooks.length ? "filled" : "empty"}" data-column="${column}" data-row="${row}">
+          <header class="shelf-cell-label">
+            <span>C${column}</span>
+            <span>R${row}</span>
+          </header>
+          <div class="shelf-books">
+            ${spines || '<span class="empty-slot">Empty shelf</span>'}
+          </div>
+        </section>
+      `);
+    }
+  }
+
+  libraryVisualization.innerHTML = `<div class="shelf-grid">${cells.join("")}</div>`;
+  setMessage(
+    visualizationMessage,
+    `${items.length} books mapped across ${MAX_SHELF_COLUMNS} columns and ${MAX_SHELF_ROWS} rows.`
+  );
 }
 
 function renderBooks(items) {
@@ -128,6 +196,7 @@ function renderBooks(items) {
   selectedBookIds = new Set([...selectedBookIds].filter((id) => items.some((item) => item.id === id)));
   updateStats(items);
   updateBulkActions();
+  renderLibraryVisualization(items);
 
   if (!items.length) {
     booksList.innerHTML = `
@@ -161,17 +230,17 @@ function renderBooks(items) {
             </p>
           </div>
           <p class="book-meta">
-            Location: ${escapeHtml(book.location || "Not set")}
+            Position: ${escapeHtml(formatShelfPosition(book))}
           </p>
           <div class="book-card-actions">
             <button type="button" class="ghost-button" data-action="edit" data-id="${book.id}">
               Edit
             </button>
+            <button type="button" class="ghost-button" data-action="move" data-id="${book.id}">
+              Move
+            </button>
             <button type="button" data-action="toggle" data-id="${book.id}">
               ${book.availability === "available" ? "Mark as borrowed" : "Return to library"}
-            </button>
-            <button type="button" class="ghost-button" data-action="location" data-id="${book.id}">
-              Change location
             </button>
             <button type="button" class="ghost-button" data-action="delete" data-id="${book.id}">
               Delete
@@ -218,7 +287,8 @@ function buildBookPayload() {
       .filter((input) => input.checked)
       .map((input) => input.value)
       .join(CATEGORY_SEPARATOR),
-    location: formData.get("location"),
+    shelf_column: Number(formData.get("shelf_column")),
+    shelf_row: Number(formData.get("shelf_row")),
     availability: formData.get("availability"),
   };
 }
@@ -260,6 +330,34 @@ function toggleSelection(bookId, checked) {
   updateBulkActions();
 }
 
+function promptForShelfPosition(book) {
+  const nextColumn = window.prompt("Shelf column (1-4):", String(book.shelf_column));
+  if (nextColumn === null) {
+    return null;
+  }
+
+  const nextRow = window.prompt("Shelf row (1-6):", String(book.shelf_row));
+  if (nextRow === null) {
+    return null;
+  }
+
+  const shelfColumn = Number(nextColumn);
+  const shelfRow = Number(nextRow);
+
+  if (
+    !Number.isInteger(shelfColumn) ||
+    !Number.isInteger(shelfRow) ||
+    shelfColumn < 1 ||
+    shelfColumn > MAX_SHELF_COLUMNS ||
+    shelfRow < 1 ||
+    shelfRow > MAX_SHELF_ROWS
+  ) {
+    throw new Error(`Shelf column must be 1-${MAX_SHELF_COLUMNS} and shelf row must be 1-${MAX_SHELF_ROWS}.`);
+  }
+
+  return { shelf_column: shelfColumn, shelf_row: shelfRow };
+}
+
 async function handleBookAction(event) {
   const target = event.target;
   const checkbox = target.closest('input[type="checkbox"][data-action="select"]');
@@ -286,20 +384,20 @@ async function handleBookAction(event) {
       return;
     }
 
-    if (action === "toggle") {
-      const path = book.availability === "available" ? `/books/${id}/borrow` : `/books/${id}/return`;
-      await request(path, { method: "PATCH" });
-    }
-
-    if (action === "location") {
-      const nextLocation = window.prompt("New book location:", book.location || "");
-      if (nextLocation === null) {
+    if (action === "move") {
+      const nextPosition = promptForShelfPosition(book);
+      if (!nextPosition) {
         return;
       }
       await request(`/books/${id}/location`, {
         method: "PATCH",
-        body: JSON.stringify({ location: nextLocation }),
+        body: JSON.stringify(nextPosition),
       });
+    }
+
+    if (action === "toggle") {
+      const path = book.availability === "available" ? `/books/${id}/borrow` : `/books/${id}/return`;
+      await request(path, { method: "PATCH" });
     }
 
     if (action === "delete") {

@@ -19,7 +19,8 @@ def test_create_book_success(tmp_path: Path) -> None:
             "title": "The Hobbit",
             "author": "J.R.R. Tolkien",
             "category": "Fantasy",
-            "location": "Shelf A-1",
+            "shelf_column": 1,
+            "shelf_row": 1,
             "availability": "available",
         },
     )
@@ -28,6 +29,8 @@ def test_create_book_success(tmp_path: Path) -> None:
     data = response.json()
     assert data["title"] == "The Hobbit"
     assert data["availability"] == "available"
+    assert data["shelf_column"] == 1
+    assert data["shelf_row"] == 1
 
 
 def test_create_book_requires_author(tmp_path: Path) -> None:
@@ -39,7 +42,8 @@ def test_create_book_requires_author(tmp_path: Path) -> None:
             "title": "The Hobbit",
             "author": "",
             "category": "Fantasy",
-            "location": "Shelf A-1",
+            "shelf_column": 1,
+            "shelf_row": 1,
             "availability": "available",
         },
     )
@@ -56,7 +60,8 @@ def test_search_finds_available_and_borrowed_books(tmp_path: Path) -> None:
             "title": "Dune",
             "author": "Frank Herbert",
             "category": "Sci-Fi",
-            "location": "Shelf B-2",
+            "shelf_column": 2,
+            "shelf_row": 1,
             "availability": "available",
         },
     ).json()
@@ -66,7 +71,8 @@ def test_search_finds_available_and_borrowed_books(tmp_path: Path) -> None:
             "title": "Dune Messiah",
             "author": "Frank Herbert",
             "category": "Sci-Fi",
-            "location": "Shelf B-3",
+            "shelf_column": 2,
+            "shelf_row": 2,
             "availability": "available",
         },
     ).json()
@@ -90,7 +96,8 @@ def test_borrow_and_return_flow(tmp_path: Path) -> None:
             "title": "Neuromancer",
             "author": "William Gibson",
             "category": "Cyberpunk",
-            "location": "Shelf C-4",
+            "shelf_column": 3,
+            "shelf_row": 1,
             "availability": "available",
         },
     ).json()
@@ -112,18 +119,20 @@ def test_change_location(tmp_path: Path) -> None:
             "title": "Foundation",
             "author": "Isaac Asimov",
             "category": "Sci-Fi",
-            "location": "Shelf D-1",
+            "shelf_column": 1,
+            "shelf_row": 4,
             "availability": "available",
         },
     ).json()
 
     response = client.patch(
         f"/books/{created['id']}/location",
-        json={"location": "Shelf D-5"},
+        json={"shelf_column": 4, "shelf_row": 2},
     )
 
     assert response.status_code == 200
-    assert response.json()["location"] == "Shelf D-5"
+    assert response.json()["shelf_column"] == 4
+    assert response.json()["shelf_row"] == 2
 
 
 def test_update_book_details(tmp_path: Path) -> None:
@@ -134,7 +143,8 @@ def test_update_book_details(tmp_path: Path) -> None:
             "title": "The Left Hand of Darkness",
             "author": "Ursula K. Le Guin",
             "category": "Sci-Fi",
-            "location": "Shelf F-1",
+            "shelf_column": 1,
+            "shelf_row": 5,
             "availability": "available",
         },
     ).json()
@@ -145,7 +155,8 @@ def test_update_book_details(tmp_path: Path) -> None:
             "title": "The Dispossessed",
             "author": "Ursula K. Le Guin",
             "category": "Science Fiction",
-            "location": "Shelf F-4",
+            "shelf_column": 3,
+            "shelf_row": 4,
             "availability": "available",
         },
     )
@@ -154,7 +165,8 @@ def test_update_book_details(tmp_path: Path) -> None:
     data = response.json()
     assert data["title"] == "The Dispossessed"
     assert data["category"] == "Science Fiction"
-    assert data["location"] == "Shelf F-4"
+    assert data["shelf_column"] == 3
+    assert data["shelf_row"] == 4
 
 
 def test_delete_book_removes_it_from_results(tmp_path: Path) -> None:
@@ -165,7 +177,8 @@ def test_delete_book_removes_it_from_results(tmp_path: Path) -> None:
             "title": "Snow Crash",
             "author": "Neal Stephenson",
             "category": "Sci-Fi",
-            "location": "Shelf E-1",
+            "shelf_column": 2,
+            "shelf_row": 6,
             "availability": "available",
         },
     ).json()

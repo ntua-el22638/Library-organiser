@@ -32,5 +32,5 @@ uvicorn app.main:app --reload
 - `PUT /books/{id}`
 - `PATCH /books/{id}/borrow`
 - `PATCH /books/{id}/return`
-- `PATCH /books/{id}/location`
+- `PATCH /books/{id}/location` (updates `shelf_column` and `shelf_row`)
 - `DELETE /books/{id}`

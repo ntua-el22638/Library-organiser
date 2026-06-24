@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -28,26 +29,86 @@ class Database:
                     author TEXT NOT NULL,
                     category TEXT NOT NULL DEFAULT '',
                     location TEXT NOT NULL DEFAULT '',
+                    shelf_column INTEGER NOT NULL DEFAULT 1,
+                    shelf_row INTEGER NOT NULL DEFAULT 1,
                     availability TEXT NOT NULL CHECK (availability IN ('available', 'borrowed')),
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """
             )
+            self._ensure_column(connection, "shelf_column", "INTEGER NOT NULL DEFAULT 1")
+            self._ensure_column(connection, "shelf_row", "INTEGER NOT NULL DEFAULT 1")
+            self._backfill_shelf_positions(connection)
             connection.commit()
+
+    def _ensure_column(self, connection: sqlite3.Connection, column_name: str, definition: str) -> None:
+        existing_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(books)").fetchall()
+        }
+        if column_name not in existing_columns:
+            connection.execute(f"ALTER TABLE books ADD COLUMN {column_name} {definition}")
+
+    def _backfill_shelf_positions(self, connection: sqlite3.Connection) -> None:
+        rows = connection.execute(
+            "SELECT id, location, shelf_column, shelf_row FROM books"
+        ).fetchall()
+
+        for row in rows:
+            shelf_column = row["shelf_column"] or 1
+            shelf_row = row["shelf_row"] or 1
+            parsed_column, parsed_row = self._parse_legacy_location(row["location"])
+
+            if parsed_column is not None:
+                shelf_column = parsed_column
+            if parsed_row is not None:
+                shelf_row = parsed_row
+
+            connection.execute(
+                """
+                UPDATE books
+                SET shelf_column = ?, shelf_row = ?, location = ?
+                WHERE id = ?
+                """,
+                (shelf_column, shelf_row, self._format_location(shelf_column, shelf_row), row["id"]),
+            )
+
+    def _parse_legacy_location(self, value: str) -> tuple[int | None, int | None]:
+        if not value:
+            return None, None
+
+        match = re.search(r"([A-Za-z])\s*[-/ ]\s*(\d+)", value)
+        if match:
+            column = ord(match.group(1).upper()) - 64
+            row = int(match.group(2))
+            return column, row
+
+        number_match = re.findall(r"\d+", value)
+        if len(number_match) >= 2:
+            return int(number_match[0]), int(number_match[1])
+        if len(number_match) == 1:
+            return None, int(number_match[0])
+
+        return None, None
+
+    def _format_location(self, shelf_column: int, shelf_row: int) -> str:
+        return f"Column {shelf_column} / Row {shelf_row}"
 
     def create_book(self, payload: dict[str, Any]) -> sqlite3.Row:
         with self._connect() as connection:
             cursor = connection.execute(
                 """
-                INSERT INTO books (title, author, category, location, availability)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO books (title, author, category, location, shelf_column, shelf_row, availability)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     payload["title"],
                     payload["author"],
                     payload["category"],
-                    payload["location"],
+                    self._format_location(payload["shelf_column"], payload["shelf_row"]),
+                    payload["shelf_column"],
+                    payload["shelf_row"],
                     payload["availability"],
                 ),
             )
@@ -85,7 +146,7 @@ class Database:
         if conditions:
             statement += " WHERE " + " AND ".join(conditions)
 
-        statement += " ORDER BY updated_at DESC, id DESC"
+        statement += " ORDER BY shelf_row ASC, shelf_column ASC, updated_at DESC, id DESC"
 
         with self._connect() as connection:
             return connection.execute(statement, parameters).fetchall()
@@ -95,15 +156,17 @@ class Database:
             cursor = connection.execute(
                 """
                 UPDATE books
-                SET title = ?, author = ?, category = ?, location = ?, availability = ?,
-                    updated_at = CURRENT_TIMESTAMP
+                SET title = ?, author = ?, category = ?, location = ?, shelf_column = ?, shelf_row = ?,
+                    availability = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
                 (
                     payload["title"],
                     payload["author"],
                     payload["category"],
-                    payload["location"],
+                    self._format_location(payload["shelf_column"], payload["shelf_row"]),
+                    payload["shelf_column"],
+                    payload["shelf_row"],
                     payload["availability"],
                     book_id,
                 ),
@@ -128,15 +191,15 @@ class Database:
                 return None
             return self.get_book(book_id, connection)
 
-    def update_location(self, book_id: int, location: str) -> sqlite3.Row | None:
+    def update_location(self, book_id: int, shelf_column: int, shelf_row: int) -> sqlite3.Row | None:
         with self._connect() as connection:
             cursor = connection.execute(
                 """
                 UPDATE books
-                SET location = ?, updated_at = CURRENT_TIMESTAMP
+                SET location = ?, shelf_column = ?, shelf_row = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
-                (location, book_id),
+                (self._format_location(shelf_column, shelf_row), shelf_column, shelf_row, book_id),
             )
             connection.commit()
             if cursor.rowcount == 0:
