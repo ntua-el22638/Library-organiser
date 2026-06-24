@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="el">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Organiser</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Personal Library Dashboard</p>
+          <h1>Library Organiser</h1>
+          <p class="hero-copy">
+            Κατέγραψε τα βιβλία σου, δες τι βρίσκεται στο ράφι και τι έχει
+            παρθεί, και βρες γρήγορα τη σωστή θέση.
+          </p>
+        </div>
+        <div class="hero-stats">
+          <article>
+            <span id="total-count">0</span>
+            <p>Συνολικά βιβλία</p>
+          </article>
+          <article>
+            <span id="available-count">0</span>
+            <p>Στη βιβλιοθήκη</p>
+          </article>
+          <article>
+            <span id="borrowed-count">0</span>
+            <p>Παρμένα</p>
+          </article>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Προσθήκη βιβλίου</h2>
+            <p>Δημιούργησε νέα εγγραφή στη βάση.</p>
+          </div>
+          <form id="book-form" class="book-form">
+            <label>
+              Τίτλος
+              <input name="title" type="text" required />
+            </label>
+            <label>
+              Συγγραφέας
+              <input name="author" type="text" required />
+            </label>
+            <label>
+              Κατηγορία
+              <input name="category" type="text" />
+            </label>
+            <label>
+              Θέση
+              <input name="location" type="text" placeholder="Π.χ. Ράφι A / Σειρά 2" />
+            </label>
+            <label>
+              Κατάσταση
+              <select name="availability">
+                <option value="available">Στη βιβλιοθήκη</option>
+                <option value="borrowed">Παρμένο</option>
+              </select>
+            </label>
+            <button type="submit">Αποθήκευση</button>
+          </form>
+          <p id="form-message" class="status-message"></p>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="panel-heading">
+            <h2>Αναζήτηση και βιβλιοθήκη</h2>
+            <p>Αναζήτηση στη βάση και έλεγχος διαθεσιμότητας.</p>
+          </div>
+
+          <form id="search-form" class="search-bar">
+            <input
+              id="search-input"
+              name="q"
+              type="search"
+              placeholder="Αναζήτηση με τίτλο, συγγραφέα ή κατηγορία"
+            />
+            <select id="availability-filter" name="availability">
+              <option value="">Όλες οι καταστάσεις</option>
+              <option value="available">Μόνο στη βιβλιοθήκη</option>
+              <option value="borrowed">Μόνο παρμένα</option>
+            </select>
+            <button type="submit">Search</button>
+            <button type="button" id="reset-button" class="ghost-button">Reset</button>
+          </form>
+
+          <p id="list-message" class="status-message"></p>
+          <div id="books-list" class="books-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
